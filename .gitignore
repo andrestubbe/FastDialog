@@ -1,0 +1,14 @@
+target/
+build/
+release/
+*.obj
+*.exp
+*.lib
+*.dll
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+*.log

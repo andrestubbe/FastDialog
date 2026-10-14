@@ -1,0 +1,5 @@
+EXPORTS
+    Java_fastdialog_FastDialog_nativeOpenFile
+    Java_fastdialog_FastDialog_nativeOpenFiles
+    Java_fastdialog_FastDialog_nativeSaveFile
+    Java_fastdialog_FastDialog_nativeOpenFolder
