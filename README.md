@@ -163,7 +163,10 @@ FastDialog is rigorously profiled using **OpenJDK JMH (Java Microbenchmark Harne
 
 | Case | Java Example | Launcher | Description |
 |:---|:---|:---|:---|
-| **Windows 11 Native Dialog Demo** | [Demo.java](examples/Demo/src/main/java/fastdialog/demo/Demo.java) | `run-demo.bat` | Interactive demonstration of open file, multi-select, save file, and folder picker flows. |
+| **Windows 11 Open File Dialog** | [Demo.java](examples/Demo/src/main/java/fastdialog/demo/Demo.java) | `run-demo.bat` | Interactive demonstration of modern Windows 11 file open dialog with breadcrumbs. |
+| **Windows 11 Multi-File Selection** | [MultiFile.java](examples/Demo/src/main/java/fastdialog/demo/MultiFile.java) | `run-demo-multi.bat` | Bulk selection and extraction of multiple file paths via native `IShellItemArray`. |
+| **Windows 11 Folder Picker** | [Folder.java](examples/Demo/src/main/java/fastdialog/demo/Folder.java) | `run-demo-folder.bat` | Dedicated Windows 11 directory picker using `FOS_PICKFOLDERS`. |
+| **Windows 11 Save File Dialog** | [Save.java](examples/Demo/src/main/java/fastdialog/demo/Save.java) | `run-demo-save.bat` | Native save file dialog with default suggested name, enforced extension, and overwrite warning. |
 | **JMH Microbenchmark Suite** | [Benchmark.java](examples/Benchmark/src/main/java/fastdialog/benchmark/Benchmark.java) | `run-benchmark.bat` | Formal OpenJDK JMH throughput measurements across native JNI bridge and filter specs. |
 
 ---
