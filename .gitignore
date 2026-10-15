@@ -12,3 +12,5 @@ release/
 .project
 .classpath
 *.log
+TODO.md
+.github/
