@@ -73,7 +73,9 @@ String savePath = FastDialog.saveFile(
 - [Why FastDialog?](#why-fastdialog)
 - [Quick Start](#quick-start)
 - [Key Features](#key-features)
+- [Real-World Use Cases](#real-world-use-cases)
 - [API Quick Reference](#api-quick-reference)
+- [Technical Demos & Benchmarks](#technical-demos--benchmarks)
 - [Installation](#installation)
 - [Documentation](#documentation)
 - [Platform Support](#platform-support)
@@ -84,16 +86,24 @@ String savePath = FastDialog.saveFile(
 
 ## Why FastDialog?
 
-Traditional Java Swing `JFileChooser` is infamous for looking outdated, rendering slowly, and missing core Windows Shell features:
+Standard Java dialogs (`JFileChooser`, `java.awt.FileDialog`) and Swing Look & Feels (like FlatLaf) either simulate file pickers in pure Java or rely on legacy Windows 95/2000 Win32 APIs. They lack modern Windows 11 Shell features, cause freezes on cloud drives (OneDrive), and introduce heavy heap allocation.
 
-| Feature | Java Swing `JFileChooser` | Legacy Win32 (`GetOpenFileNameW`) | FastDialog (`IFileOpenDialog`) |
+**FastDialog bridges Java directly to the modern Windows 11 Shell COM architecture (`IFileOpenDialog` / `IFileSaveDialog`):**
+
+1. **Authentic Windows 11 Fluent Chrome** — Real OS Explorer dialogs featuring breadcrumb path bars, Quick Access pins, search, and native dark/light mode.
+2. **Direct Shell Namespace Integration** — First-class handling of cloud storage (OneDrive, Dropbox) and network shares without JVM I/O thread freezes.
+3. **Unlimited Multi-Selection** — Replaces fragile fixed-size C buffers with native `IShellItemArray` enumeration.
+4. **Deterministic & Lightweight** — Instant sub-microsecond COM instantiation with zero GC allocation beyond the returned path strings.
+
+| Feature | Java Swing / FlatLaf | AWT `FileDialog` (Legacy Win32) | FastDialog (`IFileOpenDialog`) |
 |:---|:---|:---|:---|
-| **Windows 11 UI** | ❌ Clunky Swing emulation | ❌ Windows 2000 style | **✅ Authentic Windows 11 Fluent Shell** |
-| **Breadcrumbs & Quick Access**| ❌ Missing | ❌ Missing | **✅ Native Explorer Sidebar & Pins** |
-| **OneDrive & Cloud Drives** | ⚠️ Unreliable / hangs | ⚠️ Partial | **✅ Full Shell Namespace Integration** |
-| **Invocation Overhead** | Heavy AWT widget tree | Legacy dialog proc | **Direct sub-microsecond COM instantiation** |
-| **Garbage Collection** | Heavy component allocation | C string conversions | **Zero GC beyond returned String paths** |
-| **Dependencies** | Standard Java / Swing | Native bindings | **Pure Java 17+ backed by FastCore** |
+| **Windows 11 UI & Shell** | ❌ Emulated Swing Component | ❌ Legacy Win95/2000 style | **✅ Authentic Windows 11 Fluent Explorer** |
+| **Breadcrumbs & Quick Access** | ❌ Missing | ❌ Missing | **✅ Native Breadcrumbs & Pins** |
+| **OneDrive & Cloud Drives** | ⚠️ Freezes on File I/O | ⚠️ Inconsistent | **✅ Native Shell Namespace** |
+| **Folder Selection** | ❌ Clunky Swing tree | ❌ Unsupported on Windows | **✅ Dedicated Picker (`FOS_PICKFOLDERS`)** |
+| **Multi-Selection Capacity** | ⚠️ High Heap Allocation | ❌ Fixed buffer overflow risk | **✅ Dynamic `IShellItemArray`** |
+| **Footprint & Overhead** | Heavy Swing widget tree | AWT peer allocations | **Zero GC / Pure FastCore native loader** |
+
 
 ---
 
@@ -107,33 +117,103 @@ Traditional Java Swing `JFileChooser` is infamous for looking outdated, renderin
 
 ---
 
+## Real-World Use Cases
+
+- 🛠️ **Desktop Tooling & IDEs**: Open project workspaces and multi-select source trees without Swing look-and-feel discrepancies.
+- 🎨 **Creative Studios & Asset Managers**: Import bulk image/audio textures directly through Windows 11 Quick Access and cloud folders (OneDrive/Dropbox).
+- 💾 **Safe Export Pipelines**: Save documents with enforced file extensions (`.pdf`, `.json`, `.png`) and native OS overwrite prompts (`FOS_OVERWRITEPROMPT`).
+- ⚡ **Lightweight CLI & TUI Tools**: Spawn native Windows file pickers directly from console apps without loading massive Swing/AWT window trees into memory.
+
+---
+
 ## API Quick Reference
 
 ### FastDialog Facade (`fastdialog.FastDialog`)
 
 | Method / Signature | Return Type | Description | Docs |
 |:---|:---|:---|:---|
-| `FastDialog.openFile(hwnd, title, folder, filters...)` | `String` | Opens modern Windows 11 file open dialog; returns absolute path or `null`. | [Reference](docs/REFERENCE.md) |
-| `FastDialog.openFileObj(hwnd, title, folder, filters...)` | `File` | Same as `openFile` but returning a standard `java.io.File`. | [Reference](docs/REFERENCE.md) |
-| `FastDialog.openFiles(hwnd, title, folder, filters...)` | `String[]` | Opens multi-select file dialog; returns array of selected paths. | [Reference](docs/REFERENCE.md) |
-| `FastDialog.saveFile(hwnd, title, folder, name, ext, filters...)` | `String` | Opens modern Windows 11 save file dialog with overwrite prompt. | [Reference](docs/REFERENCE.md) |
-| `FastDialog.openFolder(hwnd, title, folder)` | `String` | Opens native Windows folder picker dialog (`FOS_PICKFOLDERS`). | [Reference](docs/REFERENCE.md) |
-| `FastDialog.isNativeAvailable()` | `boolean` | Checks if native `fastdialog.dll` JNI bridge is loaded and ready. | [Reference](docs/REFERENCE.md) |
+| `FastDialog.openFile(hwnd, title, folder, filters...)` | `String` | Opens modern Windows 11 file open dialog; returns absolute path or `null`. | [Reference](docs/REFERENCE.md#open-file-dialogs) |
+| `FastDialog.openFileObj(hwnd, title, folder, filters...)` | `File` | Same as `openFile` but returning a standard `java.io.File`. | [Reference](docs/REFERENCE.md#open-file-dialogs) |
+| `FastDialog.openFiles(hwnd, title, folder, filters...)` | `String[]` | Opens multi-select file dialog; returns array of selected paths. | [Reference](docs/REFERENCE.md#multiple-file-open-dialogs) |
+| `FastDialog.saveFile(hwnd, title, folder, name, ext, filters...)` | `String` | Opens modern Windows 11 save file dialog with overwrite prompt. | [Reference](docs/REFERENCE.md#save-file-dialogs) |
+| `FastDialog.openFolder(hwnd, title, folder)` | `String` | Opens native Windows folder picker dialog (`FOS_PICKFOLDERS`). | [Reference](docs/REFERENCE.md#folder-picker-dialogs) |
+| `FastDialog.isNativeAvailable()` | `boolean` | Checks if native `fastdialog.dll` JNI bridge is loaded and ready. | [Reference](docs/REFERENCE.md#native-availability) |
+
+---
+
+## Technical Demos & Benchmarks
+
+| Case | Java Example | Launcher | Description |
+|:---|:---|:---|:---|
+| **Windows 11 Native Dialog Demo** | [Demo.java](examples/Demo/src/main/java/fastdialog/demo/Demo.java) | `run-demo.bat` | Interactive demonstration of open file, multi-select, save file, and folder picker flows. |
 
 ---
 
 ## Installation
 
-### Maven
+### Option 1: Maven (Recommended via JitPack)
+
+Add the JitPack repository and dependencies to your `pom.xml`:
+
 ```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
 <dependencies>
     <dependency>
         <groupId>com.github.andrestubbe</groupId>
         <artifactId>FastDialog</artifactId>
         <version>0.1.0</version>
     </dependency>
+    <dependency>
+        <groupId>com.github.andrestubbe</groupId>
+        <artifactId>fastcore</artifactId>
+        <version>0.1.0</version>
+    </dependency>
 </dependencies>
 ```
+
+### Option 2: Gradle (via JitPack)
+
+```groovy
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    implementation 'com.github.andrestubbe:FastDialog:0.1.0'
+    implementation 'com.github.andrestubbe:fastcore:0.1.0'
+}
+```
+
+### Option 3: Direct Download (Pre-built JAR)
+
+1. 📦 [**FastDialog-0.1.0.jar**](https://github.com/andrestubbe/FastDialog/releases/download/0.1.0/FastDialog-0.1.0.jar)
+2. ⚙️ [**FastCore-0.1.0.jar**](https://github.com/andrestubbe/FastCore/releases/download/0.1.0/FastCore-0.1.0.jar)
+
+### Option 4: Build from Source
+
+```powershell
+# 1. Build native C++ DLL
+.\compile.bat
+
+# 2. Package JAR
+mvn clean package -DskipTests
+```
+
+---
+
+## Documentation
+
+- **[REFERENCE.md](docs/REFERENCE.md)**: Exhaustive method contracts, parameters, and filter structures.
+- **[PHILOSOPHY.md](docs/PHILOSOPHY.md)**: Shell COM architecture vs. legacy Win32 / Swing design.
+- **[ROADMAP.md](docs/ROADMAP.md)**: Planned milestone features (color pickers, font dialogs, print dialogs).
+- **[CHANGELOG.md](docs/CHANGELOG.md)**: Release notes and version history.
+- **[COMPILE.md](docs/COMPILE.md)**: Compilation guide for C++ native bridge and Java sources.
 
 ---
 
