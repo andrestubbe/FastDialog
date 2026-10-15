@@ -1,5 +1,6 @@
 @echo off
 setlocal
+chcp 65001 > nul
 cd /d "%~dp0"
 
 echo ===========================================
@@ -7,16 +8,18 @@ echo Running FastDialog Windows 11 Native Demo
 echo ===========================================
 echo.
 
-if not exist "target\FastDialog-0.1.0.jar" (
-    echo [INFO] Building FastDialog first...
-    call mvn clean package -DskipTests
+echo [+] Compiling FastDialog...
+call mvn -q install -DskipTests > nul 2>&1
+
+echo [+] Launching Demo...
+cd examples\Demo
+call mvn -q compile exec:java -Dexec.mainClass="fastdialog.demo.Demo" -Djava.library.path="..\..\build"
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo [ERROR] Demo failed to launch.
+    pause
+    exit /b %ERRORLEVEL%
 )
 
-cd examples\Demo
-call mvn compile
 cd ..\..
 
-set "CP=target\classes;examples\Demo\target\classes;%USERPROFILE%\.m2\repository\com\github\andrestubbe\fastcore\0.1.0\fastcore-0.1.0.jar"
-
-java -cp "%CP%" fastdialog.demo.Demo
-pause
