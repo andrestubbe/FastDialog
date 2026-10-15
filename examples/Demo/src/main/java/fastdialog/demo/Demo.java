@@ -20,11 +20,12 @@ public class Demo {
             return;
         }
 
-        System.out.println("\nOpening Windows 11 Native Open File Dialog...");
+        System.out.println("\nOpening Windows 11 Native Open File Dialog directly in FastDialog...");
+        String currentProjectDir = System.getProperty("user.dir");
         String file = FastDialog.openFile(
                 0,
                 "Select a File",
-                System.getProperty("user.home"),
+                currentProjectDir,
                 new DialogFilter("Source Files (*.java;*.kt;*.txt;*.md)", "*.java;*.kt;*.txt;*.md"),
                 new DialogFilter("Image Files (*.png;*.jpg;*.jpeg;*.webp)", "*.png;*.jpg;*.jpeg;*.webp"),
                 new DialogFilter("All Files (*.*)", "*.*")

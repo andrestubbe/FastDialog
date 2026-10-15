@@ -75,7 +75,8 @@ static void SetDefaultFolder(IFileDialog* pDialog, const std::wstring& folderPat
     IShellItem* pItem = NULL;
     HRESULT hr = SHCreateItemFromParsingName(folderPath.c_str(), NULL, IID_PPV_ARGS(&pItem));
     if (SUCCEEDED(hr) && pItem) {
-        pDialog->SetFolder(pItem);
+        pDialog->SetFolder(pItem);        // Forces the current folder to open directly here
+        pDialog->SetDefaultFolder(pItem); // Fallback default folder
         pItem->Release();
     }
 }
