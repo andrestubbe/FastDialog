@@ -150,11 +150,18 @@ FastDialog is rigorously profiled using **OpenJDK JMH (Java Microbenchmark Harne
 
 | Method / Signature | Return Type | Description | Docs |
 |:---|:---|:---|:---|
-| `FastDialog.openFile(hwnd, title, folder, filters...)` | `String` | Opens modern Windows 11 file open dialog; returns absolute path or `null`. | [Reference](docs/REFERENCE.md#open-file-dialogs) |
-| `FastDialog.openFileObj(hwnd, title, folder, filters...)` | `File` | Same as `openFile` but returning a standard `java.io.File`. | [Reference](docs/REFERENCE.md#open-file-dialogs) |
-| `FastDialog.openFiles(hwnd, title, folder, filters...)` | `String[]` | Opens multi-select file dialog; returns array of selected paths. | [Reference](docs/REFERENCE.md#multiple-file-open-dialogs) |
-| `FastDialog.saveFile(hwnd, title, folder, name, ext, filters...)` | `String` | Opens modern Windows 11 save file dialog with overwrite prompt. | [Reference](docs/REFERENCE.md#save-file-dialogs) |
-| `FastDialog.openFolder(hwnd, title, folder)` | `String` | Opens native Windows folder picker dialog (`FOS_PICKFOLDERS`). | [Reference](docs/REFERENCE.md#folder-picker-dialogs) |
+| `FastDialog.openFile`<br>`(hwnd, title, folder, filters...)` | `String` | Opens modern Windows 11 file open dialog; returns absolute path or `null`. | [Reference](docs/REFERENCE.md#open-file-dialogs) |
+| `FastDialog.openFileObj`<br>`(hwnd, title, folder, filters...)` | `File` | Same as `openFile` but returning a standard `java.io.File`. | [Reference](docs/REFERENCE.md#open-file-dialogs) |
+| `FastDialog.openFiles`<br>`(hwnd, title, folder, filters...)` | `String[]` | Opens multi-select file dialog; returns array of selected paths. | [Reference](docs/REFERENCE.md#multiple-file-open-dialogs) |
+| `FastDialog.saveFile`<br>`(hwnd, title, folder, name, ext, filters...)` | `String` | Opens modern Windows 11 save file dialog with overwrite prompt. | [Reference](docs/REFERENCE.md#save-file-dialogs) |
+| `FastDialog.openFolder`<br>`(hwnd, title, folder)` | `String` | Opens native Windows folder picker dialog (`FOS_PICKFOLDERS`). | [Reference](docs/REFERENCE.md#folder-picker-dialogs) |
+| `FastDialog.showTaskDialog`<br>`(hwnd, title, instr, content, btns, icon)` | `int` | Shows modern Windows 10/11 TaskDialog; returns pressed button ID. | [Reference](docs/REFERENCE.md#taskdialog) |
+| `FastDialog.showInfo`<br>`(title, instruction, content)` | `void` | Displays modern information TaskDialog. | [Reference](docs/REFERENCE.md#taskdialog) |
+| `FastDialog.showConfirm`<br>`(hwnd, title, instr, content)` | `boolean` | Displays modern confirmation TaskDialog (returns true for YES). | [Reference](docs/REFERENCE.md#taskdialog) |
+| `FastDialog.pickColor`<br>`(hwnd, initialRgb)` | `int` | Native Windows Color Chooser (`ChooseColorW`); returns 32-bit ARGB. | [Reference](docs/REFERENCE.md#color-chooser) |
+| `FastDialog.pickFont`<br>`(hwnd, initialFont)` | `DialogFont` | Native Windows Font Chooser (`ChooseFontW`); returns selected font. | [Reference](docs/REFERENCE.md#font-chooser) |
+| `FastDialog.showInFolder`<br>`(filePath)` | `boolean` | Opens Windows Explorer and selects/highlights target file. | [Reference](docs/REFERENCE.md#shell-integration) |
+| `FastDialog.showProperties`<br>`(hwnd, filePath)` | `boolean` | Invokes native Windows Properties sheet for file or directory. | [Reference](docs/REFERENCE.md#shell-integration) |
 | `FastDialog.isNativeAvailable()` | `boolean` | Checks if native `fastdialog.dll` JNI bridge is loaded and ready. | [Reference](docs/REFERENCE.md#native-availability) |
 
 ---
@@ -167,6 +174,10 @@ FastDialog is rigorously profiled using **OpenJDK JMH (Java Microbenchmark Harne
 | **Windows 11 Multi-File Selection** | [MultiFile.java](examples/Demo/src/main/java/fastdialog/demo/MultiFile.java) | `run-demo-multi.bat` | Bulk selection and extraction of multiple file paths via native `IShellItemArray`. |
 | **Windows 11 Folder Picker** | [Folder.java](examples/Demo/src/main/java/fastdialog/demo/Folder.java) | `run-demo-folder.bat` | Dedicated Windows 11 directory picker using `FOS_PICKFOLDERS`. |
 | **Windows 11 Save File Dialog** | [Save.java](examples/Demo/src/main/java/fastdialog/demo/Save.java) | `run-demo-save.bat` | Native save file dialog with default suggested name, enforced extension, and overwrite warning. |
+| **Windows 10/11 Modern TaskDialog** | [TaskDialogDemo.java](examples/Demo/src/main/java/fastdialog/demo/TaskDialogDemo.java) | `run-demo-taskdialog.bat` | Modern Windows TaskDialog with prominent header, body text, and icons. |
+| **Windows Native Color Chooser** | [ColorPicker.java](examples/Demo/src/main/java/fastdialog/demo/ColorPicker.java) | `run-demo-color.bat` | Native `ChooseColorW` returning 32-bit packed ARGB integer. |
+| **Windows Shell Reveal & Properties** | [ExplorerOps.java](examples/Demo/src/main/java/fastdialog/demo/ExplorerOps.java) | `run-demo-explorer.bat` | "Reveal in Explorer" (`SHOpenFolderAndSelectItems`) and native Properties sheet. |
+| **Windows Native Font Chooser** | [FontPicker.java](examples/Demo/src/main/java/fastdialog/demo/FontPicker.java) | `run-demo-font.bat` | Native `ChooseFontW` returning font family, size in pt, bold, and italic state. |
 | **JMH Microbenchmark Suite** | [Benchmark.java](examples/Benchmark/src/main/java/fastdialog/benchmark/Benchmark.java) | `run-benchmark.bat` | Formal OpenJDK JMH throughput measurements across native JNI bridge and filter specs. |
 
 ---

@@ -75,7 +75,7 @@ echo Compiling FastDialog JNI Bridge (C++)...
 echo =====================================================
 cl /LD /Fe:build\fastdialog.dll /Fo:build\ ^
     native\FastDialog.cpp ^
-    user32.lib ole32.lib shell32.lib shlwapi.lib oleaut32.lib ^
+    user32.lib gdi32.lib ole32.lib shell32.lib shlwapi.lib oleaut32.lib comctl32.lib comdlg32.lib ^
     /I"%JAVA_HOME%\include" ^
     /I"%JAVA_HOME%\include\win32" ^
     /EHsc /std:c++17 /O2 /W3 ^

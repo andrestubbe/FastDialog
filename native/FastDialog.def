@@ -3,3 +3,9 @@ EXPORTS
     Java_fastdialog_FastDialog_nativeOpenFiles
     Java_fastdialog_FastDialog_nativeSaveFile
     Java_fastdialog_FastDialog_nativeOpenFolder
+    Java_fastdialog_FastDialog_nativeShowTaskDialog
+    Java_fastdialog_FastDialog_nativePickColor
+    Java_fastdialog_FastDialog_nativeShowInFolder
+    Java_fastdialog_FastDialog_nativeShowProperties
+    Java_fastdialog_FastDialog_nativePickFont
+

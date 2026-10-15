@@ -1,6 +1,9 @@
 #define WIN32_LEAN_AND_MEAN
 #define STRICT_TYPED_ITEMIDS
 #include <windows.h>
+#include <commdlg.h>      // ChooseColorW, ChooseFontW
+#include <shellapi.h>     // ShellExecuteExW
+#include <shlobj.h>       // SHParseDisplayName, SHOpenFolderAndSelectItems
 #include <shobjidl.h>     // IFileOpenDialog, IFileSaveDialog
 #include <shlwapi.h>
 #include <knownfolders.h>
@@ -318,3 +321,156 @@ JNIEXPORT jstring JNICALL Java_fastdialog_FastDialog_nativeOpenFolder
     pFolderDialog->Release();
     return result;
 }
+
+// =========================================================================
+// JNI: nativeShowTaskDialog
+// =========================================================================
+JNIEXPORT jint JNICALL Java_fastdialog_FastDialog_nativeShowTaskDialog
+  (JNIEnv *env, jclass, jlong parentHwnd, jstring jTitle, jstring jInstruction, jstring jContent, jint buttons, jint iconId) {
+    ComScope com;
+
+    std::wstring title = JStringToWString(env, jTitle);
+    std::wstring instruction = JStringToWString(env, jInstruction);
+    std::wstring content = JStringToWString(env, jContent);
+
+    TASKDIALOGCONFIG config = { sizeof(config) };
+    config.hwndParent = (HWND)parentHwnd;
+    config.dwFlags = TDF_ALLOW_DIALOG_CANCELLATION | TDF_POSITION_RELATIVE_TO_WINDOW;
+    config.pszWindowTitle = title.empty() ? L"Notice" : title.c_str();
+    config.pszMainInstruction = instruction.empty() ? NULL : instruction.c_str();
+    config.pszContent = content.empty() ? NULL : content.c_str();
+    config.dwCommonButtons = (TASKDIALOG_COMMON_BUTTON_FLAGS)(buttons != 0 ? buttons : TDCBF_OK_BUTTON);
+
+    // Map iconId to TaskDialog main icon
+    if (iconId == 1) config.pszMainIcon = TD_INFORMATION_ICON;
+    else if (iconId == 2) config.pszMainIcon = TD_WARNING_ICON;
+    else if (iconId == 3) config.pszMainIcon = TD_ERROR_ICON;
+    else if (iconId == 4) config.pszMainIcon = TD_SHIELD_ICON;
+
+    int nButtonPressed = 0;
+    HRESULT hr = TaskDialogIndirect(&config, &nButtonPressed, NULL, NULL);
+    if (FAILED(hr)) {
+        return 0; // Cancel / Error
+    }
+    return (jint)nButtonPressed;
+}
+
+// =========================================================================
+// JNI: nativePickColor
+// =========================================================================
+static COLORREF g_customColors[16] = { 0 };
+
+JNIEXPORT jint JNICALL Java_fastdialog_FastDialog_nativePickColor
+  (JNIEnv *, jclass, jlong parentHwnd, jint initialRgb) {
+    CHOOSECOLORW cc = { sizeof(cc) };
+    cc.hwndOwner = (HWND)parentHwnd;
+
+    // Convert initial packed ARGB/RGB to Win32 COLORREF (0x00bbggrr)
+    int r = (initialRgb >> 16) & 0xFF;
+    int g = (initialRgb >> 8) & 0xFF;
+    int b = initialRgb & 0xFF;
+    cc.rgbResult = RGB(r, g, b);
+    cc.lpCustColors = g_customColors;
+    cc.Flags = CC_RGBINIT | CC_FULLOPEN;
+
+    if (ChooseColorW(&cc)) {
+        int resR = GetRValue(cc.rgbResult);
+        int resG = GetGValue(cc.rgbResult);
+        int resB = GetBValue(cc.rgbResult);
+        // Pack into 32-bit ARGB (alpha 255)
+        return (jint)(0xFF000000 | (resR << 16) | (resG << 8) | resB);
+    }
+
+    return -1; // Cancelled
+}
+
+// =========================================================================
+// JNI: nativeShowInFolder (Reveal in Windows Explorer)
+// =========================================================================
+JNIEXPORT jboolean JNICALL Java_fastdialog_FastDialog_nativeShowInFolder
+  (JNIEnv *env, jclass, jstring jFilePath) {
+    if (!jFilePath) return JNI_FALSE;
+    ComScope com;
+
+    std::wstring path = JStringToWString(env, jFilePath);
+    if (path.empty()) return JNI_FALSE;
+
+    PIDLIST_ABSOLUTE pidl = NULL;
+    SFGAOF sfgao;
+    HRESULT hr = SHParseDisplayName(path.c_str(), NULL, &pidl, 0, &sfgao);
+    if (SUCCEEDED(hr) && pidl) {
+        hr = SHOpenFolderAndSelectItems(pidl, 0, NULL, 0);
+        CoTaskMemFree(pidl);
+        return SUCCEEDED(hr) ? JNI_TRUE : JNI_FALSE;
+    }
+
+    return JNI_FALSE;
+}
+
+// =========================================================================
+// JNI: nativeShowProperties (Windows Properties Sheet)
+// =========================================================================
+JNIEXPORT jboolean JNICALL Java_fastdialog_FastDialog_nativeShowProperties
+  (JNIEnv *env, jclass, jlong parentHwnd, jstring jFilePath) {
+    if (!jFilePath) return JNI_FALSE;
+    std::wstring path = JStringToWString(env, jFilePath);
+    if (path.empty()) return JNI_FALSE;
+
+    SHELLEXECUTEINFOW sei = { sizeof(sei) };
+    sei.fMask = SEE_MASK_INVOKEIDLIST;
+    sei.hwnd = (HWND)parentHwnd;
+    sei.lpVerb = L"properties";
+    sei.lpFile = path.c_str();
+    sei.nShow = SW_SHOWNORMAL;
+
+    return ShellExecuteExW(&sei) ? JNI_TRUE : JNI_FALSE;
+}
+
+// =========================================================================
+// JNI: nativePickFont
+// =========================================================================
+JNIEXPORT jstring JNICALL Java_fastdialog_FastDialog_nativePickFont
+  (JNIEnv *env, jclass, jlong parentHwnd, jstring jName, jint sizePt, jboolean bold, jboolean italic) {
+    CHOOSEFONTW cf = { sizeof(cf) };
+    LOGFONTW lf = { 0 };
+
+    std::wstring name = JStringToWString(env, jName);
+    if (!name.empty()) {
+        wcsncpy_s(lf.lfFaceName, name.c_str(), LF_FACESIZE - 1);
+    } else {
+        wcsncpy_s(lf.lfFaceName, L"Segoe UI", LF_FACESIZE - 1);
+    }
+
+    HDC hdc = GetDC(NULL);
+    int logPixelsY = GetDeviceCaps(hdc, LOGPIXELSY);
+    ReleaseDC(NULL, hdc);
+
+    lf.lfHeight = -MulDiv(sizePt > 0 ? sizePt : 10, logPixelsY, 72);
+    lf.lfWeight = bold ? FW_BOLD : FW_NORMAL;
+    lf.lfItalic = italic ? TRUE : FALSE;
+    lf.lfCharSet = DEFAULT_CHARSET;
+
+    cf.hwndOwner = (HWND)parentHwnd;
+    cf.lpLogFont = &lf;
+    cf.Flags = CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS | CF_EFFECTS;
+
+    if (ChooseFontW(&cf)) {
+        int pointSize = cf.iPointSize / 10;
+        bool resBold = (lf.lfWeight >= FW_BOLD);
+        bool resItalic = (lf.lfItalic != 0);
+
+        // Format: "Family;PointSize;Bold;Italic"
+        std::wstring result = lf.lfFaceName;
+        result += L";";
+        result += std::to_wstring(pointSize);
+        result += L";";
+        result += (resBold ? L"true" : L"false");
+        result += L";";
+        result += (resItalic ? L"true" : L"false");
+
+        return WStringToJString(env, result.c_str());
+    }
+
+    return nullptr; // Cancelled
+}
+
