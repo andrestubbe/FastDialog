@@ -1,9 +1,8 @@
 target/
 build/
-release/
-*.obj
-*.exp
-*.lib
+release/*.dll
+release/*.lib
+release/*.exp
 *.dll
 .idea/
 *.iml

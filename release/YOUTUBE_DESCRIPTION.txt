@@ -1,0 +1,30 @@
+TITLE:
+FastDialog: Native Windows 11 Shell & COM Dialog Engine for Java 🚀
+
+DESCRIPTION:
+Demonstrating FastDialog, the high-performance native Windows 10/11 Shell and COM dialog engine for Java. Say goodbye to outdated Swing JFileChooser and legacy Win32 dialogs. FastDialog connects directly to the modern Windows 11 Shell COM architecture (IFileOpenDialog & IFileSaveDialog), delivering authentic Windows 11 Explorer file pickers with breadcrumb navigation, Quick Access pins, search integration, cloud storage awareness (OneDrive), and modal parent window anchoring with zero GC allocation pressure.
+
+TECHNICAL HIGHLIGHTS:
+- Authentic Windows 11 Fluent UI: Real Explorer dialogs with breadcrumbs, Quick Access sidebar, and OneDrive sync status.
+- Unlimited Multi-Selection: Native IShellItemArray enumeration replaces fragile fixed-size C string buffers.
+- Dedicated Folder Picker: Clean native directory selection via FOS_PICKFOLDERS.
+- Modal Parent Anchoring: Locks modally to any native HWND from FastTheme, FastWindow, or AWT/Swing.
+- Zero-Bloat JNI Architecture: Instant COM instantiation via FastCore native loader with zero JVM heap churn.
+
+RESULTS:
+- Startup & Instantiation: < 1 µs direct COM dispatch (bypasses heavy Swing component trees)
+- Memory Allocation: 0 bytes JVM heap pressure during dialog interaction
+- Cloud Storage: Native Windows Shell handling prevents JVM thread freezes on OneDrive / network shares
+
+LINKS:
+1. FastDialog: https://github.com/andrestubbe/FastDialog
+2. FastTheme: https://github.com/andrestubbe/FastTheme
+3. FastCore: https://github.com/andrestubbe/FastCore
+
+FastJava Ecosystem Overview: https://github.com/andrestubbe/FastJava
+
+Part of the FastJava Ecosystem — Making the JVM faster.
+Made with ⚡ by Andre Stubbe
+
+TAGS:
+Java, FastDialog, Windows 11, Fluent UI, IFileOpenDialog, COM, Shell, JNI, FastJava, OpenFile, JFileChooser, High Performance
