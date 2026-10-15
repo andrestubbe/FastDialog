@@ -170,7 +170,7 @@ FastDialog is rigorously profiled using **OpenJDK JMH (Java Microbenchmark Harne
 
 ## Installation
 
-### Option 1: Maven (Recommended via JitPack)
+### Option 1: Maven (Recommended)
 
 Add the JitPack repository and dependencies to your `pom.xml`:
 
@@ -183,11 +183,13 @@ Add the JitPack repository and dependencies to your `pom.xml`:
 </repositories>
 
 <dependencies>
+    <!-- Core FastDialog Engine -->
     <dependency>
         <groupId>com.github.andrestubbe</groupId>
         <artifactId>FastDialog</artifactId>
         <version>0.1.0</version>
     </dependency>
+    <!-- Required Native JNI loader -->
     <dependency>
         <groupId>com.github.andrestubbe</groupId>
         <artifactId>fastcore</artifactId>
@@ -209,20 +211,12 @@ dependencies {
 }
 ```
 
-### Option 3: Direct Download (Pre-built JAR)
+### Option 3: Direct Download (No Build Tool)
 
-1. 📦 [**FastDialog-0.1.0.jar**](https://github.com/andrestubbe/FastDialog/releases/download/0.1.0/FastDialog-0.1.0.jar)
-2. ⚙️ [**FastCore-0.1.0.jar**](https://github.com/andrestubbe/FastCore/releases/download/0.1.0/FastCore-0.1.0.jar)
+Download the pre-built JARs directly to add them to your classpath:
 
-### Option 4: Build from Source
-
-```powershell
-# 1. Build native C++ DLL
-.\compile.bat
-
-# 2. Package JAR
-mvn clean package -DskipTests
-```
+1. 📦 **[FastDialog-0.1.0.jar](https://github.com/andrestubbe/FastDialog/releases/download/0.1.0/FastDialog-0.1.0.jar)** (Core Library & Native DLL)
+2. ⚙️ **[FastCore-0.1.0.jar](https://github.com/andrestubbe/FastCore/releases/download/0.1.0/FastCore-0.1.0.jar)** (Required Native JNI loader)
 
 ---
 
