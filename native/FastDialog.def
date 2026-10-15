@@ -8,4 +8,12 @@ EXPORTS
     Java_fastdialog_FastDialog_nativeShowInFolder
     Java_fastdialog_FastDialog_nativeShowProperties
     Java_fastdialog_FastDialog_nativePickFont
+    Java_fastdialog_FastDialog_nativeShowAbout
+    Java_fastdialog_FastDialog_nativeOpenWith
+    Java_fastdialog_FastDialog_nativePromptCredentials
+    Java_fastdialog_FastDialog_nativeCreateProgress
+    Java_fastdialog_FastDialog_nativeUpdateProgress
+    Java_fastdialog_FastDialog_nativeIsProgressCancelled
+    Java_fastdialog_FastDialog_nativeCloseProgress
+    Java_fastdialog_FastDialog_nativeShowCustomTaskDialog
 

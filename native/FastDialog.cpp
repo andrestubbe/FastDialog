@@ -3,9 +3,10 @@
 #include <windows.h>
 #include <commdlg.h>      // ChooseColorW, ChooseFontW
 #include <shellapi.h>     // ShellExecuteExW
-#include <shlobj.h>       // SHParseDisplayName, SHOpenFolderAndSelectItems
+#include <shlobj.h>       // SHParseDisplayName, SHOpenFolderAndSelectItems, IProgressDialog
 #include <shobjidl.h>     // IFileOpenDialog, IFileSaveDialog
 #include <shlwapi.h>
+#include <wincred.h>      // CredUIPromptForWindowsCredentialsW
 #include <knownfolders.h>
 #include <vector>
 #include <string>
@@ -472,5 +473,253 @@ JNIEXPORT jstring JNICALL Java_fastdialog_FastDialog_nativePickFont
     }
 
     return nullptr; // Cancelled
+}
+
+// =========================================================================
+// JNI: nativeShowAbout (ShellAboutW)
+// =========================================================================
+JNIEXPORT jboolean JNICALL Java_fastdialog_FastDialog_nativeShowAbout
+  (JNIEnv *env, jclass, jlong parentHwnd, jstring jAppTitle, jstring jOtherStuff, jstring jIconPath) {
+    std::wstring appTitle = JStringToWString(env, jAppTitle);
+    std::wstring otherStuff = JStringToWString(env, jOtherStuff);
+
+    HICON hIcon = NULL;
+    if (jIconPath) {
+        std::wstring iconPath = JStringToWString(env, jIconPath);
+        if (!iconPath.empty()) {
+            hIcon = (HICON)LoadImageW(NULL, iconPath.c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE);
+        }
+    }
+
+    int ret = ShellAboutW((HWND)parentHwnd, 
+                          appTitle.empty() ? L"Application" : appTitle.c_str(), 
+                          otherStuff.empty() ? NULL : otherStuff.c_str(), 
+                          hIcon);
+
+    if (hIcon) {
+        DestroyIcon(hIcon);
+    }
+
+    return ret != 0 ? JNI_TRUE : JNI_FALSE;
+}
+
+// =========================================================================
+// JNI: nativeOpenWith (SHOpenWithDialog)
+// =========================================================================
+JNIEXPORT jboolean JNICALL Java_fastdialog_FastDialog_nativeOpenWith
+  (JNIEnv *env, jclass, jlong parentHwnd, jstring jFilePath) {
+    if (!jFilePath) return JNI_FALSE;
+    std::wstring path = JStringToWString(env, jFilePath);
+    if (path.empty()) return JNI_FALSE;
+
+    OPENASINFO oai = { 0 };
+    oai.pcszFile = path.c_str();
+    oai.pcszClass = NULL;
+    oai.oaifInFlags = OAIF_ALLOW_REGISTRATION | OAIF_EXEC;
+
+    HRESULT hr = SHOpenWithDialog((HWND)parentHwnd, &oai);
+    return SUCCEEDED(hr) ? JNI_TRUE : JNI_FALSE;
+}
+
+// =========================================================================
+// JNI: nativePromptCredentials (CredUIPromptForWindowsCredentialsW)
+// =========================================================================
+JNIEXPORT jstring JNICALL Java_fastdialog_FastDialog_nativePromptCredentials
+  (JNIEnv *env, jclass, jlong parentHwnd, jstring jTitle, jstring jMessage) {
+    std::wstring title = JStringToWString(env, jTitle);
+    std::wstring message = JStringToWString(env, jMessage);
+
+    CREDUI_INFOW cui = { sizeof(cui) };
+    cui.hwndParent = (HWND)parentHwnd;
+    cui.pszCaptionText = title.empty() ? L"Windows Security" : title.c_str();
+    cui.pszMessageText = message.empty() ? L"Please enter your credentials to continue." : message.c_str();
+
+    ULONG authPackage = 0;
+    LPVOID authBuffer = NULL;
+    ULONG authBufferSize = 0;
+    BOOL save = FALSE;
+
+    DWORD status = CredUIPromptForWindowsCredentialsW(
+        &cui,
+        0,
+        &authPackage,
+        NULL,
+        0,
+        &authBuffer,
+        &authBufferSize,
+        &save,
+        CREDUIWIN_GENERIC
+    );
+
+    if (status == ERROR_SUCCESS && authBuffer) {
+        WCHAR user[256] = { 0 };
+        DWORD userLen = 256;
+        WCHAR domain[256] = { 0 };
+        DWORD domainLen = 256;
+        WCHAR pass[256] = { 0 };
+        DWORD passLen = 256;
+
+        BOOL unpacked = CredUnPackAuthenticationBufferW(
+            0,
+            authBuffer,
+            authBufferSize,
+            user,
+            &userLen,
+            domain,
+            &domainLen,
+            pass,
+            &passLen
+        );
+
+        // Securely wipe raw auth buffer
+        SecureZeroMemory(authBuffer, authBufferSize);
+        CoTaskMemFree(authBuffer);
+
+        if (unpacked) {
+            std::wstring fullUser = user;
+            if (domainLen > 0 && wcslen(domain) > 0) {
+                fullUser = std::wstring(domain) + L"\\" + fullUser;
+            }
+            std::wstring result = fullUser + L"\n" + pass;
+            SecureZeroMemory(pass, sizeof(pass));
+            return WStringToJString(env, result.c_str());
+        }
+    }
+
+    return nullptr; // Cancelled or failed
+}
+
+// =========================================================================
+// JNI: IProgressDialog management
+// =========================================================================
+JNIEXPORT jlong JNICALL Java_fastdialog_FastDialog_nativeCreateProgress
+  (JNIEnv *env, jclass, jlong parentHwnd, jstring jTitle, jstring jLine1, jint flags) {
+    ComScope com;
+
+    IProgressDialog* pProgress = NULL;
+    HRESULT hr = CoCreateInstance(CLSID_ProgressDialog, NULL, CLSCTX_INPROC_SERVER, IID_IProgressDialog, (void**)&pProgress);
+    if (FAILED(hr) || !pProgress) {
+        return 0;
+    }
+
+    std::wstring title = JStringToWString(env, jTitle);
+    std::wstring line1 = JStringToWString(env, jLine1);
+
+    if (!title.empty()) {
+        pProgress->SetTitle(title.c_str());
+    }
+    if (!line1.empty()) {
+        pProgress->SetLine(1, line1.c_str(), FALSE, NULL);
+    }
+
+    DWORD dwFlags = (flags != 0) ? (DWORD)flags : (PROGDLG_NORMAL | PROGDLG_AUTOTIME | PROGDLG_NOMINIMIZE);
+    pProgress->StartProgressDialog((HWND)parentHwnd, NULL, dwFlags, NULL);
+
+    return (jlong)(intptr_t)pProgress;
+}
+
+JNIEXPORT void JNICALL Java_fastdialog_FastDialog_nativeUpdateProgress
+  (JNIEnv *env, jclass, jlong handle, jint current, jint total, jstring jLine2, jstring jLine3) {
+    if (!handle) return;
+    IProgressDialog* pProgress = (IProgressDialog*)(intptr_t)handle;
+
+    pProgress->SetProgress((DWORD)current, (DWORD)total);
+
+    if (jLine2) {
+        std::wstring line2 = JStringToWString(env, jLine2);
+        pProgress->SetLine(2, line2.c_str(), FALSE, NULL);
+    }
+    if (jLine3) {
+        std::wstring line3 = JStringToWString(env, jLine3);
+        pProgress->SetLine(3, line3.c_str(), FALSE, NULL);
+    }
+}
+
+JNIEXPORT jboolean JNICALL Java_fastdialog_FastDialog_nativeIsProgressCancelled
+  (JNIEnv *, jclass, jlong handle) {
+    if (!handle) return JNI_TRUE;
+    IProgressDialog* pProgress = (IProgressDialog*)(intptr_t)handle;
+    return pProgress->HasUserCancelled() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT void JNICALL Java_fastdialog_FastDialog_nativeCloseProgress
+  (JNIEnv *, jclass, jlong handle) {
+    if (!handle) return;
+    IProgressDialog* pProgress = (IProgressDialog*)(intptr_t)handle;
+    pProgress->StopProgressDialog();
+    pProgress->Release();
+}
+
+// =========================================================================
+// JNI: nativeShowCustomTaskDialog (TaskDialog with Command Links, Details, Checkbox)
+// =========================================================================
+JNIEXPORT jint JNICALL Java_fastdialog_FastDialog_nativeShowCustomTaskDialog
+  (JNIEnv *env, jclass, jlong parentHwnd, jstring jTitle, jstring jInstruction, jstring jContent, 
+   jstring jDetails, jstring jCheckboxText, jobjectArray jButtons, jint commonButtons, jint iconId, jbooleanArray jCheckboxResult) {
+    ComScope com;
+
+    std::wstring title = JStringToWString(env, jTitle);
+    std::wstring instruction = JStringToWString(env, jInstruction);
+    std::wstring content = JStringToWString(env, jContent);
+    std::wstring details = JStringToWString(env, jDetails);
+    std::wstring checkText = JStringToWString(env, jCheckboxText);
+
+    TASKDIALOGCONFIG config = { sizeof(config) };
+    config.hwndParent = (HWND)parentHwnd;
+    config.dwFlags = TDF_ALLOW_DIALOG_CANCELLATION | TDF_POSITION_RELATIVE_TO_WINDOW | TDF_SIZE_TO_CONTENT;
+
+    config.pszWindowTitle = title.empty() ? L"Notice" : title.c_str();
+    config.pszMainInstruction = instruction.empty() ? NULL : instruction.c_str();
+    config.pszContent = content.empty() ? NULL : content.c_str();
+
+    if (!details.empty()) {
+        config.pszExpandedInformation = details.c_str();
+        config.pszCollapsedControlText = L"Show Details";
+        config.pszExpandedControlText = L"Hide Details";
+    }
+
+    if (!checkText.empty()) {
+        config.pszVerificationText = checkText.c_str();
+    }
+
+    // Custom Buttons / Command Links
+    std::vector<TASKDIALOG_BUTTON> customButtons;
+    std::vector<std::wstring> buttonStrings;
+
+    if (jButtons) {
+        jsize count = env->GetArrayLength(jButtons);
+        config.dwFlags |= TDF_USE_COMMAND_LINKS;
+        for (jsize i = 0; i < count; i++) {
+            jstring btnStr = (jstring)env->GetObjectArrayElement(jButtons, i);
+            buttonStrings.push_back(JStringToWString(env, btnStr));
+            TASKDIALOG_BUTTON tb = { 0 };
+            tb.nButtonID = 100 + (int)i;
+            tb.pszButtonText = buttonStrings.back().c_str();
+            customButtons.push_back(tb);
+        }
+        config.pButtons = customButtons.data();
+        config.cButtons = (UINT)customButtons.size();
+    }
+
+    config.dwCommonButtons = (TASKDIALOG_COMMON_BUTTON_FLAGS)commonButtons;
+
+    if (iconId == 1) config.pszMainIcon = TD_INFORMATION_ICON;
+    else if (iconId == 2) config.pszMainIcon = TD_WARNING_ICON;
+    else if (iconId == 3) config.pszMainIcon = TD_ERROR_ICON;
+    else if (iconId == 4) config.pszMainIcon = TD_SHIELD_ICON;
+
+    int nButtonPressed = 0;
+    BOOL bVerificationChecked = FALSE;
+    HRESULT hr = TaskDialogIndirect(&config, &nButtonPressed, NULL, &bVerificationChecked);
+    if (FAILED(hr)) {
+        return 0;
+    }
+
+    if (jCheckboxResult && env->GetArrayLength(jCheckboxResult) > 0) {
+        jboolean val = bVerificationChecked ? JNI_TRUE : JNI_FALSE;
+        env->SetBooleanArrayRegion(jCheckboxResult, 0, 1, &val);
+    }
+
+    return (jint)nButtonPressed;
 }
 

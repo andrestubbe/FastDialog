@@ -347,6 +347,137 @@ public final class FastDialog {
     }
 
     // =========================================================================
+    // Shell About Box (ShellAboutW)
+    // =========================================================================
+
+    /**
+     * Displays the official Windows About dialog customized for your application.
+     *
+     * @param parentHwnd  Parent window handle (or 0).
+     * @param appTitle    Application name displayed in title and header.
+     * @param otherStuff  Additional text, copyright, or version info.
+     * @param iconPath    Optional file path to an .ico file (or null for default).
+     * @return True if displayed successfully.
+     */
+    public static boolean showAbout(long parentHwnd, String appTitle, String otherStuff, String iconPath) {
+        return nativeShowAbout(parentHwnd, appTitle, otherStuff, iconPath);
+    }
+
+    public static boolean showAbout(String appTitle, String otherStuff) {
+        return showAbout(0, appTitle, otherStuff, null);
+    }
+
+    // =========================================================================
+    // Open With Dialog (SHOpenWithDialog)
+    // =========================================================================
+
+    /**
+     * Displays the native Windows 10/11 "How do you want to open this file?" dialog.
+     *
+     * @param parentHwnd Parent window handle (or 0).
+     * @param filePath   Absolute path to target file.
+     * @return True if dialog opened and processed.
+     */
+    public static boolean openWith(long parentHwnd, String filePath) {
+        return nativeOpenWith(parentHwnd, filePath);
+    }
+
+    public static boolean openWith(String filePath) {
+        return openWith(0, filePath);
+    }
+
+    // =========================================================================
+    // Windows Security Credentials Dialog (CredUIPromptForWindowsCredentialsW)
+    // =========================================================================
+
+    /**
+     * Displays the Windows Security credential prompt (Windows Hello / PIN / Password).
+     *
+     * @param parentHwnd Parent window handle (or 0).
+     * @param title      Dialog title.
+     * @param message    Prompt description or reason.
+     * @return {@link DialogCredentials} with username and password, or null if cancelled.
+     */
+    public static DialogCredentials promptCredentials(long parentHwnd, String title, String message) {
+        String res = nativePromptCredentials(parentHwnd, title, message);
+        if (res == null) return null;
+        String[] parts = res.split("\n", 2);
+        return new DialogCredentials(parts[0], parts.length > 1 ? parts[1] : "");
+    }
+
+    public static DialogCredentials promptCredentials(String title, String message) {
+        return promptCredentials(0, title, message);
+    }
+
+    // =========================================================================
+    // Native Progress Dialog (IProgressDialog)
+    // =========================================================================
+
+    /**
+     * Starts an asynchronous native Windows Progress Dialog with system animation.
+     *
+     * @param parentHwnd Parent window handle (or 0).
+     * @param title      Window title.
+     * @param line1      Primary status description (e.g. "Copying files...").
+     * @return A {@link NativeProgress} handle to update and close the dialog.
+     */
+    public static NativeProgress createProgress(long parentHwnd, String title, String line1) {
+        long h = nativeCreateProgress(parentHwnd, title, line1, 0);
+        return new NativeProgress(h);
+    }
+
+    public static NativeProgress createProgress(String title, String line1) {
+        return createProgress(0, title, line1);
+    }
+
+    // =========================================================================
+    // TaskDialog with Command Links, Collapsible Details, and Checkbox
+    // =========================================================================
+
+    /**
+     * Result of an extended TaskDialog.
+     */
+    public static class TaskDialogResponse {
+        private final int buttonId;
+        private final boolean verificationChecked;
+
+        public TaskDialogResponse(int buttonId, boolean verificationChecked) {
+            this.buttonId = buttonId;
+            this.verificationChecked = verificationChecked;
+        }
+
+        public int getButtonId() {
+            return buttonId;
+        }
+
+        public boolean isVerificationChecked() {
+            return verificationChecked;
+        }
+    }
+
+    /**
+     * Shows a TaskDialog with modern Command Links (prominent clickable option buttons),
+     * expandable details section, and a "Do not show again" checkbox.
+     *
+     * @param parentHwnd     Parent window handle.
+     * @param title          Dialog title.
+     * @param instruction    Large header text.
+     * @param content        Body text.
+     * @param details        Expandable/collapsible details text (or null).
+     * @param checkboxText   Verification checkbox text (or null).
+     * @param commandLinks   List of command links (each formatted as "Heading\nSubtext").
+     * @param iconId         ICON_* constant.
+     * @return {@link TaskDialogResponse} containing pressed button ID and checkbox state.
+     */
+    public static TaskDialogResponse showTaskDialog(long parentHwnd, String title, String instruction, String content,
+                                                    String details, String checkboxText, String[] commandLinks, int iconId) {
+        boolean[] checkOut = new boolean[1];
+        int id = nativeShowCustomTaskDialog(parentHwnd, title, instruction, content, details, checkboxText,
+                commandLinks, BUTTON_CANCEL, iconId, checkOut);
+        return new TaskDialogResponse(id, checkOut[0]);
+    }
+
+    // =========================================================================
     // Native JNI Declarations
     // =========================================================================
 
@@ -367,4 +498,23 @@ public final class FastDialog {
     private static native boolean nativeShowProperties(long parentHwnd, String filePath);
 
     private static native String nativePickFont(long parentHwnd, String name, int sizePt, boolean bold, boolean italic);
+
+    private static native boolean nativeShowAbout(long parentHwnd, String appTitle, String otherStuff, String iconPath);
+
+    private static native boolean nativeOpenWith(long parentHwnd, String filePath);
+
+    private static native String nativePromptCredentials(long parentHwnd, String title, String message);
+
+    static native long nativeCreateProgress(long parentHwnd, String title, String line1, int flags);
+
+    static native void nativeUpdateProgress(long handle, int current, int total, String line2, String line3);
+
+    static native boolean nativeIsProgressCancelled(long handle);
+
+    static native void nativeCloseProgress(long handle);
+
+    static native int nativeShowCustomTaskDialog(long parentHwnd, String title, String instruction, String content,
+                                                 String details, String checkboxText, String[] buttons, int commonButtons,
+                                                 int iconId, boolean[] checkboxResult);
 }
+

@@ -1,3 +1,9 @@
+> [!WARNING]
+> **🚧 WORK IN PROGRESS (WIP) — Active Native Engine & Win32 Integration**
+> 
+> * **Active Calibration:** Native Windows 11 Shell COM and Win32 interfaces (`IFileOpenDialog`, `IFileSaveDialog`, `IProgressDialog`, `TaskDialogIndirect`, and `CredUI`) are undergoing active testing and calibration across Windows 10 and 11 builds.
+> * **FastJava Integration:** FastDialog is designed as the zero-dependency, ultra-fast native system dialog runtime for the **[FastJava Suite](https://github.com/andrestubbe)**, seamlessly integrating with `FastWindow`, `FastTheme`, and `FastCore`.
+
 # FastDialog 0.1.0 [ALPHA-2026-10-14] — Native Windows 11 Shell & COM Dialog Engine for Java
 
 [![Status](https://img.shields.io/badge/status-0.1.0-brightgreen.svg)](https://github.com/andrestubbe/FastDialog/releases/tag/0.1.0)
@@ -156,8 +162,13 @@ FastDialog is rigorously profiled using **OpenJDK JMH (Java Microbenchmark Harne
 | `FastDialog.saveFile`<br>`(hwnd, title, folder, name, ext, filters...)` | `String` | Opens modern Windows 11 save file dialog with overwrite prompt. | [Reference](docs/REFERENCE.md#save-file-dialogs) |
 | `FastDialog.openFolder`<br>`(hwnd, title, folder)` | `String` | Opens native Windows folder picker dialog (`FOS_PICKFOLDERS`). | [Reference](docs/REFERENCE.md#folder-picker-dialogs) |
 | `FastDialog.showTaskDialog`<br>`(hwnd, title, instr, content, btns, icon)` | `int` | Shows modern Windows 10/11 TaskDialog; returns pressed button ID. | [Reference](docs/REFERENCE.md#taskdialog) |
+| `FastDialog.showTaskDialog`<br>`(hwnd, title, instr, content, details, check, links, icon)` | `TaskDialogResponse` | Shows TaskDialog with Command Links, expandable details, and checkbox. | [Reference](docs/REFERENCE.md#taskdialog) |
 | `FastDialog.showInfo`<br>`(title, instruction, content)` | `void` | Displays modern information TaskDialog. | [Reference](docs/REFERENCE.md#taskdialog) |
 | `FastDialog.showConfirm`<br>`(hwnd, title, instr, content)` | `boolean` | Displays modern confirmation TaskDialog (returns true for YES). | [Reference](docs/REFERENCE.md#taskdialog) |
+| `FastDialog.createProgress`<br>`(hwnd, title, line1)` | `NativeProgress` | Starts asynchronous native Windows Progress Dialog (`IProgressDialog`). | [Reference](docs/REFERENCE.md#native-progress-dialog) |
+| `FastDialog.promptCredentials`<br>`(hwnd, title, message)` | `DialogCredentials` | Native Windows Security dialog (Windows Hello / PIN / Password). | [Reference](docs/REFERENCE.md#windows-security-credentials) |
+| `FastDialog.openWith`<br>`(hwnd, filePath)` | `boolean` | Native Windows "How do you want to open this file?" dialog (`SHOpenWithDialog`). | [Reference](docs/REFERENCE.md#open-with-dialog) |
+| `FastDialog.showAbout`<br>`(hwnd, appTitle, info, iconPath)` | `boolean` | Official native Windows About dialog (`ShellAboutW`). | [Reference](docs/REFERENCE.md#shell-about-dialog) |
 | `FastDialog.pickColor`<br>`(hwnd, initialRgb)` | `int` | Native Windows Color Chooser (`ChooseColorW`); returns 32-bit ARGB. | [Reference](docs/REFERENCE.md#color-chooser) |
 | `FastDialog.pickFont`<br>`(hwnd, initialFont)` | `DialogFont` | Native Windows Font Chooser (`ChooseFontW`); returns selected font. | [Reference](docs/REFERENCE.md#font-chooser) |
 | `FastDialog.showInFolder`<br>`(filePath)` | `boolean` | Opens Windows Explorer and selects/highlights target file. | [Reference](docs/REFERENCE.md#shell-integration) |
@@ -175,6 +186,11 @@ FastDialog is rigorously profiled using **OpenJDK JMH (Java Microbenchmark Harne
 | **Windows 11 Folder Picker** | [Folder.java](examples/Demo/src/main/java/fastdialog/demo/Folder.java) | `run-demo-folder.bat` | Dedicated Windows 11 directory picker using `FOS_PICKFOLDERS`. |
 | **Windows 11 Save File Dialog** | [Save.java](examples/Demo/src/main/java/fastdialog/demo/Save.java) | `run-demo-save.bat` | Native save file dialog with default suggested name, enforced extension, and overwrite warning. |
 | **Windows 10/11 Modern TaskDialog** | [TaskDialogDemo.java](examples/Demo/src/main/java/fastdialog/demo/TaskDialogDemo.java) | `run-demo-taskdialog.bat` | Modern Windows TaskDialog with prominent header, body text, and icons. |
+| **Command Links & Details TaskDialog** | [CommandLinksDemo.java](examples/Demo/src/main/java/fastdialog/demo/CommandLinksDemo.java) | `run-demo-commandlinks.bat` | TaskDialog with Windows Command Links buttons, expandable details, and checkbox. |
+| **Native Windows Progress Dialog** | [ProgressDemo.java](examples/Demo/src/main/java/fastdialog/demo/ProgressDemo.java) | `run-demo-progress.bat` | Asynchronous Win32/COM progress bar with animated status, time estimation, and cancel button. |
+| **Windows Security Credentials** | [CredentialsDemo.java](examples/Demo/src/main/java/fastdialog/demo/CredentialsDemo.java) | `run-demo-credentials.bat` | Official Windows Security UI (Windows Hello, PIN, Username & Password). |
+| **Native "Open With" Dialog** | [OpenWithDemo.java](examples/Demo/src/main/java/fastdialog/demo/OpenWithDemo.java) | `run-demo-openwith.bat` | Windows 10/11 system dialog prompting the user to choose an application to open a file. |
+| **Native Windows About Box** | [AboutDemo.java](examples/Demo/src/main/java/fastdialog/demo/AboutDemo.java) | `run-demo-about.bat` | Official system About dialog with custom title, copyright, and icon. |
 | **Windows Native Color Chooser** | [ColorPicker.java](examples/Demo/src/main/java/fastdialog/demo/ColorPicker.java) | `run-demo-color.bat` | Native `ChooseColorW` returning 32-bit packed ARGB integer. |
 | **Windows Shell Reveal & Properties** | [ExplorerOps.java](examples/Demo/src/main/java/fastdialog/demo/ExplorerOps.java) | `run-demo-explorer.bat` | "Reveal in Explorer" (`SHOpenFolderAndSelectItems`) and native Properties sheet. |
 | **Windows Native Font Chooser** | [FontPicker.java](examples/Demo/src/main/java/fastdialog/demo/FontPicker.java) | `run-demo-font.bat` | Native `ChooseFontW` returning font family, size in pt, bold, and italic state. |
