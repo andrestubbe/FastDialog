@@ -20,47 +20,20 @@ public class Demo {
             return;
         }
 
-        System.out.println("\n[1] Opening Single File Dialog (Images / All Files)...");
+        System.out.println("\nOpening Windows 11 Native Open File Dialog...");
         String file = FastDialog.openFile(
                 0,
-                "Select an Image File",
+                "Select a File",
                 System.getProperty("user.home"),
+                new DialogFilter("Source Files (*.java;*.kt;*.txt;*.md)", "*.java;*.kt;*.txt;*.md"),
                 new DialogFilter("Image Files (*.png;*.jpg;*.jpeg;*.webp)", "*.png;*.jpg;*.jpeg;*.webp"),
-                new DialogFilter("Text & Source Files (*.txt;*.java;*.md)", "*.txt;*.java;*.md"),
                 new DialogFilter("All Files (*.*)", "*.*")
         );
-        System.out.println("Result: " + (file != null ? file : "<Cancelled>"));
 
-        System.out.println("\n[2] Opening Multiple Files Dialog (Java / Source Files)...");
-        String[] files = FastDialog.openFiles(
-                0,
-                "Select Multiple Files",
-                System.getProperty("user.home"),
-                new DialogFilter("Java Files (*.java)", "*.java"),
-                new DialogFilter("All Files (*.*)", "*.*")
-        );
-        System.out.println("Result: " + (files != null ? Arrays.toString(files) : "<Cancelled>"));
-
-        System.out.println("\n[3] Opening Folder Picker Dialog...");
-        String folder = FastDialog.openFolder(
-                0,
-                "Choose a Project Folder",
-                System.getProperty("user.dir")
-        );
-        System.out.println("Result: " + (folder != null ? folder : "<Cancelled>"));
-
-        System.out.println("\n[4] Opening Save File Dialog...");
-        String saveTarget = FastDialog.saveFile(
-                0,
-                "Save Output Report",
-                System.getProperty("user.home"),
-                "export.json",
-                "json",
-                new DialogFilter("JSON Files (*.json)", "*.json"),
-                new DialogFilter("All Files (*.*)", "*.*")
-        );
-        System.out.println("Result: " + (saveTarget != null ? saveTarget : "<Cancelled>"));
-
-        System.out.println("\nDemo completed successfully!");
+        if (file != null) {
+            System.out.println("Selected: " + file);
+        } else {
+            System.out.println("<Dialog was cancelled by user>");
+        }
     }
 }
